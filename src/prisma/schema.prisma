@@ -1,29 +1,29 @@
 
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
 
 
-generator client {
-  provider = "prisma-client-js"
-}
+// generator client {
+//   provider = "prisma-client-js"
+// }
 
-model User {
-  id       Int      @id @default(autoincrement())
-  username String
-  email    String   @unique
-  password String
-  movies   Movie[]
-}
+// model User {
+//   id       Int      @id @default(autoincrement())
+//   username String
+//   email    String   @unique
+//   password String
+//   movies   Movie[]
+// }
 
-model Movie {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String
-  director    String
-  releaseDate DateTime
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-}
+// model Movie {
+//   id          Int       @id @default(autoincrement())
+//   name        String
+//   description String
+//   director    String
+//   releaseDate DateTime
+//   userId      Int
+//   user        User      @relation(fields: [userId], references: [id])
+// }
