@@ -23,6 +23,13 @@ const typeDefs = gql`
     getUser(id: Int!): User
     getMovies: [Movie!]!
     getMovie(id: Int!): Movie
+    searchMovies(searchTerm: String): [Movie!]!
+    sortMovies(sortBy: String): [Movie!]!
+  }
+
+  type Error {
+    message: String!
+    code: String
   }
 
   type Mutation {
@@ -32,6 +39,16 @@ const typeDefs = gql`
     createMovie(data: MovieInput!): Movie!
     updateMovie(id: Int!, data: MovieInput!): Movie!
     deleteMovie(id: Int!): Movie!
+  }
+
+  type DeleteMovieResponse {
+    movie: Movie
+    error: Error
+  }
+
+  type CreateUserResponse {
+    user: User
+    error: Error
   }
 
   input UserInput {
@@ -153,7 +170,7 @@ const resolvers = {
       });
 
       if (!user) {
-        throw new Error(`User with ID ${args} not found`);
+        return null;
       }
       return user;
     },
@@ -165,9 +182,70 @@ const resolvers = {
         where: { id: args.id },
       });
       if (!movie) {
-        return `Movie with ID ${args} not found`;
+        return null;
       }
       return movie;
+    },
+    searchMovies: async (parent: any, args: { searchTerm: string }) => {
+      // If a search term is provided, filter the movies by name or description
+      if (args.searchTerm) {
+        const movies = await prisma.movie.findMany({
+          where: {
+            OR: [
+              {
+                name: {
+                  contains: args.searchTerm,
+                  mode: "insensitive",
+                },
+              },
+              {
+                description: {
+                  contains: args.searchTerm,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          },
+        });
+
+        return movies;
+      }
+
+      // If no search term is provided, return an empty array or handle it as needed
+      return [];
+    },
+    sortMovies: async (parent: any, args: { sort: string }) => {
+      let orderBy = {};
+      let sortBy = args.sort;
+
+      if (sortBy) {
+        // Parse the sortBy argument and set the appropriate ordering
+        if (sortBy === "name_ASC") {
+          orderBy = { name: "asc" };
+        } else if (sortBy === "name_DESC") {
+          orderBy = { name: "desc" };
+        }
+        // Add more sorting options as needed.
+      }
+
+      const movies = await prisma.movie.findMany({
+        orderBy,
+      });
+
+      return movies;
+    },
+  },
+  Mutation: {
+    deleteMovie: async (parent: any, args: { id: number }) => {
+      try {
+        const deletedMovie = await prisma.movie.delete({
+          where: { id: args.id }, // Use args.id directly
+        });
+
+        return deletedMovie;
+      } catch (error: any) {
+        throw new Error(`Error deleting movie: ${error.message}`);
+      }
     },
   },
 };
