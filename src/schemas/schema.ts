@@ -244,7 +244,8 @@ const resolvers = {
 
         return deletedMovie;
       } catch (error: any) {
-        throw new Error(`Error deleting movie: ${error.message}`);
+        return null;
+        //throw new Error(`Error deleting movie: ${error.message}`);
       }
     },
   },

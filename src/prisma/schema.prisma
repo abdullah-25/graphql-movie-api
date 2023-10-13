@@ -3,17 +3,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 generator client {
   provider = "prisma-client-js"
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  username String
-  email    String   @unique
-  password String
-  movies   Movie[]
+  id        Int       @id @default(autoincrement())
+  username  String
+  email     String    @unique
+  password  String
+  userMovies UserMovies[]
 }
 
 model Movie {
@@ -22,6 +21,17 @@ model Movie {
   description String
   director    String
   releaseDate DateTime
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
+  userMovies  UserMovies[]
 }
+
+model UserMovies {
+  id      Int    @id @default(autoincrement())
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
+  movieId Int
+  movie   Movie  @relation(fields: [movieId], references: [id])
+
+  
+}
+
+// this model relationship allows user to have way to lookup for movies they have watch
