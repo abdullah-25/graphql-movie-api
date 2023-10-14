@@ -1,6 +1,12 @@
 import { gql } from "apollo-server";
-const { prisma } = require("../db");
 import { GraphQLScalarType, Kind } from "graphql";
+
+import { APP_SECRET } from "../auth";
+import { hash, compare } from "bcryptjs";
+import { sign } from "jsonwebtoken";
+import { GraphQLContext } from "../context";
+
+const { prisma } = require("../db");
 
 const typeDefs = gql`
   type User {
@@ -28,6 +34,7 @@ const typeDefs = gql`
     searchMovies(searchTerm: String): [Movie!]!
     sortMovies(sortBy: String): [Movie!]!
     moviePagination(skip: Int!, take: Int!): [Movie!]!
+    me: User!
   }
   type UsersMovies {
     id: Int!
@@ -41,7 +48,7 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    signup(email: String!, password: String!, name: String!): AuthPayload
+    signup(email: String!, password: String!, username: String!): AuthPayload
     login(email: String!, password: String!): AuthPayload
     createMovie(data: MovieInput!): Movie!
     updateMovie(id: Int!, data: MovieInput!): Movie!
@@ -173,6 +180,13 @@ const resolvers = {
     },
   }),
   Query: {
+    me: (parent: unknown, args: {}, context: GraphQLContext) => {
+      if (context.currentUser === null) {
+        throw new Error("Unauthenticated!");
+      }
+
+      return context.currentUser;
+    },
     getUsers: async () => {
       return await prisma.User.findMany();
     },
@@ -282,6 +296,55 @@ const resolvers = {
     },
   },
   Mutation: {
+    signup: async (
+      parent: unknown,
+      args: { email: string; password: string; username: string },
+      context: GraphQLContext
+    ) => {
+      // 1
+      const password = await hash(args.password, 10);
+
+      // 2
+      const user = await prisma.User.create({
+        data: { ...args, password },
+      });
+
+      // 3
+      const token = sign({ userId: user.id }, APP_SECRET);
+
+      // 4
+      return {
+        token,
+        user,
+      };
+    },
+    login: async (
+      parent: unknown,
+      args: { email: string; password: string },
+      context: GraphQLContext
+    ) => {
+      // 1
+      const user = await prisma.User.findUnique({
+        where: { email: args.email },
+      });
+      if (!user) {
+        throw new Error("No such user found");
+      }
+
+      // 2
+      const valid = await compare(args.password, user.password);
+      if (!valid) {
+        throw new Error("Invalid password");
+      }
+
+      const token = sign({ userId: user.id }, APP_SECRET);
+
+      // 3
+      return {
+        token,
+        user,
+      };
+    },
     deleteMovie: async (parent: any, args: { id: number }) => {
       try {
         const deletedMovie = await prisma.movie.delete({
