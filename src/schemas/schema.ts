@@ -23,8 +23,15 @@ const typeDefs = gql`
     getUser(id: Int!): User
     getMovies: [Movie!]!
     getMovie(id: Int!): Movie
+    getUserMovies: [UsersMovies!]!
+    getUserMoviesByUserID(id: Int!): [UsersMovies!]!
     searchMovies(searchTerm: String): [Movie!]!
     sortMovies(sortBy: String): [Movie!]!
+  }
+  type UsersMovies {
+    id: Int!
+    userId: Int!
+    movieId: Int!
   }
 
   type Error {
@@ -214,15 +221,17 @@ const resolvers = {
       // If no search term is provided, return an empty array or handle it as needed
       return [];
     },
+
+    //sort by relase date (more user-frindly feature than sorting by an other filed)
     sortMovies: async (parent: any, args: { sort: string }) => {
       let orderBy = {};
       let sortBy = args.sort;
 
       if (sortBy) {
         // Parse the sortBy argument and set the appropriate ordering
-        if (sortBy === "name_ASC") {
+        if (sortBy === "releaseDate_ASC") {
           orderBy = { name: "asc" };
-        } else if (sortBy === "name_DESC") {
+        } else if (sortBy === "releaseDate_DESC") {
           orderBy = { name: "desc" };
         }
         // Add more sorting options as needed.
@@ -232,6 +241,20 @@ const resolvers = {
         orderBy,
       });
 
+      return movies;
+    },
+    getUserMovies: async () => {
+      return prisma.UserMovies.findMany();
+    },
+
+    //allows filtering of movies based on user (can be done same with movieID but userId is more realistic)
+    getUserMoviesByUserID: async (parent: any, args: { id: number }) => {
+      const movies = prisma.UserMovies.findMany({
+        where: { userId: args.id },
+      });
+      if (!movies) {
+        return "No movies found for userID: " + args.id;
+      }
       return movies;
     },
   },
