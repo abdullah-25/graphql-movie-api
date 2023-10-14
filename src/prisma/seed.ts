@@ -5,16 +5,16 @@ const main = async () => {
     // Create seed data for User model
     const user1 = await prisma.User.create({
       data: {
-        username: "user1",
-        email: "user1@mock.com",
+        username: "newUser",
+        email: "user1234@mock.com",
         password: "password",
       },
     });
 
     const user2 = await prisma.User.create({
       data: {
-        username: "user2",
-        email: "user2@mock.com",
+        username: "user12",
+        email: "user2223@mock.com",
         password: "passwordnew",
       },
     });
@@ -40,6 +40,36 @@ const main = async () => {
       },
     });
 
+    const movie3 = await prisma.Movie.create({
+      data: {
+        name: "The Matrix",
+        description:
+          "A computer programmer discovers that reality as he knows it is a simulation created by machines to subdue humanity.",
+        director: "Lana Wachowski, Lilly Wachowski",
+        releaseDate: new Date("1999-03-31"),
+      },
+    });
+
+    const movie4 = await prisma.Movie.create({
+      data: {
+        name: "The Dark Night",
+        description:
+          "The plot follows the vigilante Batman, police lieutenant James Gordon, and district attorney Harvey Dent, who form an alliance to dismantle organized crime in Gotham City",
+        director: "Chrostopher Nolan",
+        releaseDate: new Date("2008-07-18"),
+      },
+    });
+
+    const movie5 = await prisma.Movie.create({
+      data: {
+        name: "Pulp Fiction",
+        description:
+          "The lives of two mob hitmen, a boxer, a gangster's wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
+        director: "Quentin Tarantino",
+        releaseDate: new Date("1994-10-14"),
+      },
+    });
+
     // Create seed data for UserMovies model
     await prisma.UserMovies.create({
       data: {
@@ -52,6 +82,30 @@ const main = async () => {
       data: {
         userId: user2.id,
         movieId: movie2.id,
+      },
+    });
+    await prisma.UserMovies.create({
+      data: {
+        userId: user2.id,
+        movieId: movie1.id,
+      },
+    });
+    await prisma.UserMovies.create({
+      data: {
+        userId: user2.id,
+        movieId: movie3.id,
+      },
+    });
+    await prisma.UserMovies.create({
+      data: {
+        userId: user2.id,
+        movieId: movie4.id,
+      },
+    });
+    await prisma.UserMovies.create({
+      data: {
+        userId: user1.id,
+        movieId: movie5.id,
       },
     });
 

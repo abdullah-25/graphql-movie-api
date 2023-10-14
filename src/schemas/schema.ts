@@ -27,6 +27,7 @@ const typeDefs = gql`
     getUserMoviesByUserID(id: Int!): [UsersMovies!]!
     searchMovies(searchTerm: String): [Movie!]!
     sortMovies(sortBy: String): [Movie!]!
+    moviePagination(skip: Int!, take: Int!): [Movie!]!
   }
   type UsersMovies {
     id: Int!
@@ -257,6 +258,24 @@ const resolvers = {
       }
       return movies;
     },
+
+    //for small db this would work well but if we have millions of movies then skipping thousands would slow down this query
+    //so offset pagination might not be ideal in that case
+    moviePagination: async (parent: any, args: any) => {
+      try {
+        const results = await prisma.movie.findMany({
+          skip: args.skip,
+          take: args.take,
+        });
+
+        return results; // Ensure you return an array of movie objects
+      } catch (error) {
+        console.error("Error in moviePagination resolver:", error);
+        throw new Error(
+          "An error occurred while fetching movies for pagination."
+        );
+      }
+    },
   },
   Mutation: {
     deleteMovie: async (parent: any, args: { id: number }) => {
@@ -268,7 +287,6 @@ const resolvers = {
         return deletedMovie;
       } catch (error: any) {
         return null;
-        //throw new Error(`Error deleting movie: ${error.message}`);
       }
     },
   },
