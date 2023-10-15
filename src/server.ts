@@ -1,42 +1,59 @@
-const { ApolloServer } = require("apollo-server-express");
-const express = require("express");
-const { resolvers, typeDefs } = require("./schemas/schema");
-const { getUser } = require("./auth"); // Updated import
-const cors = require("cors");
+import "graphql-import-node";
+import fastify from "fastify";
+import { contextFactory } from "./context";
+import {
+  getGraphQLParameters,
+  processRequest,
+  Request,
+  renderGraphiQL,
+  shouldRenderGraphiQL,
+  sendResult,
+} from "graphql-helix";
+import { schema } from "./schemas/schema";
 
-const app = express();
+async function main() {
+  const server = fastify();
 
-// Enable CORS for all routes
-app.use(cors());
+  server.route({
+    method: ["POST", "GET"],
+    url: "/graphql",
+    handler: async (req, reply) => {
+      const request: Request = {
+        headers: req.headers,
+        method: req.method,
+        query: req.query,
+        body: req.body,
+      };
 
-// Authentication middleware
-app.use(({ req, res, next }: any) => {
-  const token = req.headers.authorization || "";
-  const user = getUser(token);
+      if (shouldRenderGraphiQL(request)) {
+        reply.header("Content-Type", "text/html");
+        reply.send(
+          renderGraphiQL({
+            endpoint: "/graphql",
+          })
+        );
 
-  if (user) {
-    req.user = user;
-  }
+        return;
+      }
 
-  next();
-});
+      const { operationName, query, variables } = getGraphQLParameters(request);
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: ({ req }: any) => ({
-    user: req.user,
-  }),
-});
+      const result = await processRequest({
+        request,
+        schema,
+        operationName,
+        contextFactory,
+        query,
+        variables,
+      });
 
-async function startServer() {
-  await server.start();
-  server.applyMiddleware({ app });
+      sendResult(result, reply.raw);
+    },
+  });
 
-  const PORT = process.env.PORT || 8080;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server listening on port ${PORT}`);
+  server.listen(3000, "0.0.0.0", () => {
+    console.log(`GraphQL API is running on http://localhost:3000/graphql`);
   });
 }
 
-startServer();
+main();
