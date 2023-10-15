@@ -1,10 +1,11 @@
 import { gql } from "apollo-server";
 import { GraphQLScalarType, Kind } from "graphql";
-import { hash, compare } from "bcryptjs";
-import { sign } from "jsonwebtoken";
-import { APP_SECRET } from "../auth";
+const bcrypt = require("bcryptjs");
+import { PrismaClient } from "@prisma/client";
+import { JWT_SECRET } from "../auth";
+import { jwt } from "../auth";
 
-const { prisma } = require("../db");
+const prisma = new PrismaClient();
 
 const typeDefs = gql`
   type User {
@@ -108,10 +109,10 @@ const resolvers = {
     //   return context.currentUser;
     // },
     getUsers: async () => {
-      return await prisma.User.findMany();
+      return await prisma.user.findMany();
     },
     getUser: (parent: any, args: { id: number }) => {
-      const user = prisma.User.findUnique({
+      const user = prisma.user.findUnique({
         where: { id: args.id },
       });
 
@@ -183,12 +184,12 @@ const resolvers = {
       return movies;
     },
     getUserMovies: async () => {
-      return prisma.UserMovies.findMany();
+      return prisma.userMovies.findMany();
     },
 
     //allows filtering of movies based on user (can be done same with movieID but userId is more realistic)
     getUserMoviesByUserID: async (parent: any, args: { id: number }) => {
-      const movies = prisma.UserMovies.findMany({
+      const movies = prisma.userMovies.findMany({
         where: { userId: args.id },
       });
       if (!movies) {
@@ -222,15 +223,16 @@ const resolvers = {
       context: any
     ) => {
       // 1
-      const password = await hash(args.password, 10);
+      const password = await bcrypt.hash(args.password, 10);
 
       // 2
       const user = await context.prisma.User.create({
-        data: { ...args, password },
+        data: { username: args.username, email: args.email, password },
       });
 
       // 3
-      const token = sign({ userId: user.id }, APP_SECRET);
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+      return { token, user };
 
       // 4
       return {
@@ -238,33 +240,31 @@ const resolvers = {
         user,
       };
     },
-    // login: async (
-    //   parent: unknown,
-    //   args: { email: string; password: string }
-    // ) => {
-    //   // 1
-    //   const user = await prisma.User.findUnique({
-    //     where: { email: args.email },
-    //   });
-    //   if (!user) {
-    //     throw new Error("No such user found");
-    //   }
+    login: async (
+      parent: unknown,
+      args: { email: string; password: string },
+      context: any
+    ) => {
+      const user = await context.prisma.User.findUnique({
+        where: { email: args.email },
+      });
 
-    //   // 2
-    //   const valid = await compare(args.password, user.password);
-    //   if (!valid) {
-    //     throw new Error("Invalid password");
-    //   }
+      if (!user) {
+        throw new Error("No such user found");
+      }
 
-    //   const token = sign({ userId: user.id }, APP_SECRET);
+      const valid = await bcrypt.compare(args.password, user.password);
+      if (!valid) {
+        throw new Error("Invalid password");
+      }
 
-    //   // 3
-    //   return {
-    //     token,
-    //     user,
-    //   };
-    // },
-    deleteMovie: async (parent: any, args: { id: number }) => {
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+      return { token, user };
+    },
+    deleteMovie: async (parent: any, args: { id: number }, context: any) => {
+      if (!context.user) {
+        throw new Error("Authentication required");
+      }
       try {
         const deletedMovie = await prisma.movie.delete({
           where: { id: args.id }, // Use args.id directly

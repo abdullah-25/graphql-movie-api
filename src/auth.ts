@@ -1,14 +1,19 @@
 const { verify } = require("jsonwebtoken");
-export const APP_SECRET = "your-secret-key";
+export const JWT_SECRET = "your-secret-key";
+export const jwt = require("jsonwebtoken");
 
-export function getUser(token: any) {
+function authenticateUser({ req, res, next }: any) {
+  const token = req.headers.authorization || "";
+
   try {
-    if (!token) return null;
+    if (!token) {
+      throw new Error("No token provided");
+    }
 
-    // Verify the token and extract the user information
-    const payload = verify(token, APP_SECRET);
-    return payload;
+    const user = jwt.verify(token, JWT_SECRET);
+    req.user = user;
+    next();
   } catch (error) {
-    return null;
+    return res.status(401).json({ error: "Authentication failed" });
   }
 }

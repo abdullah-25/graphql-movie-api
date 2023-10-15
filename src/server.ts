@@ -3,19 +3,32 @@ const express = require("express");
 const { resolvers, typeDefs } = require("./schemas/schema");
 const { getUser } = require("./auth"); // Updated import
 const cors = require("cors");
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const app = express();
 
-// Enable CORS for all routes
-app.use(cors());
+// // Authentication middleware
+// app.use(({ req, next }: any) => {
+//   const token = req.headers.authorization || "";
+//   const user = getUser(token);
 
-// Authentication middleware
+//   if (user) {
+//     req.user = user;
+//   }
+
+//   next();
+// });
+
 app.use(({ req, res, next }: any) => {
-  const token = req.headers.authorization || "";
-  const user = getUser(token);
+  const token = req.headers.authorization;
 
-  if (user) {
-    req.user = user;
+  if (token) {
+    const user = getUser(token);
+    if (user) {
+      req.user = user;
+    }
   }
 
   next();
@@ -25,6 +38,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }: any) => ({
+    prisma,
     user: req.user,
   }),
 });

@@ -1,4 +1,4 @@
-const { prisma } = require("../db"); // Adjust the path to your db.ts file
+//const { prisma } = require("../db"); // Adjust the path to your db.ts file
 
 const main = async () => {
   try {
