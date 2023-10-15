@@ -54,8 +54,15 @@ const typeDefs = gql`
     signup(email: String!, password: String!, username: String!): AuthPayload
     login(email: String!, password: String!): AuthPayload
     createMovie(data: MovieInput!): Movie!
-    updateMovie(id: Int!, data: MovieInput!): Movie!
+    updateMovie(id: Int!, data: MovieInput!): Movie
     deleteMovie(id: Int!): DeleteMovieResponse
+  }
+
+  input MovieInput {
+    name: String
+    description: String
+    director: String
+    releaseDate: Date
   }
 
   type DeleteMovieResponse {
@@ -281,6 +288,7 @@ const resolvers = {
       args: { id: number },
       context: GraphQLContext
     ) => {
+      //check for auth
       if (context.currentUser === null) {
         throw new Error("Unauthenticated!");
       }
@@ -310,6 +318,37 @@ const resolvers = {
             "An error occurred while deleting the movie: " + error.message,
         };
       }
+    },
+    updateMovie: async (parent: any, args: any, context: GraphQLContext) => {
+      //check for auth
+      if (context.currentUser === null) {
+        throw new Error("Unauthenticated!");
+      }
+
+      const updatedMovie = await prisma.movie.update({
+        where: { id: args.id },
+        data: args.data,
+      });
+
+      return updatedMovie;
+    },
+    createMovie: async (parent: any, args: any, context: GraphQLContext) => {
+      //check for auth
+      if (context.currentUser === null) {
+        throw new Error("Unauthenticated!");
+      }
+      const releaseDate = new Date(args.data.releaseDate);
+
+      const newMovie = await prisma.movie.create({
+        data: {
+          name: args.data.name,
+          description: args.data.description,
+          director: args.data.director,
+          releaseDate: releaseDate, // Use the parsed releaseDate
+        },
+      });
+
+      return newMovie;
     },
   },
 };
