@@ -1,10 +1,8 @@
 import { gql } from "apollo-server";
 import { GraphQLScalarType, Kind } from "graphql";
-
-import { APP_SECRET } from "../auth";
 import { hash, compare } from "bcryptjs";
 import { sign } from "jsonwebtoken";
-import { GraphQLContext } from "../context";
+import { APP_SECRET } from "../auth";
 
 const { prisma } = require("../db");
 
@@ -102,13 +100,13 @@ const resolvers = {
     },
   }),
   Query: {
-    me: (parent: unknown, args: {}, context: GraphQLContext) => {
-      if (context.currentUser === null) {
-        throw new Error("Unauthenticated!");
-      }
+    // me: (parent: unknown, args: {}) => {
+    //   if (currentUser === null) {
+    //     throw new Error("Unauthenticated!");
+    //   }
 
-      return context.currentUser;
-    },
+    //   return context.currentUser;
+    // },
     getUsers: async () => {
       return await prisma.User.findMany();
     },
@@ -221,7 +219,7 @@ const resolvers = {
     signup: async (
       parent: unknown,
       args: { email: string; password: string; username: string },
-      context: GraphQLContext
+      context: any
     ) => {
       // 1
       const password = await hash(args.password, 10);
@@ -240,40 +238,35 @@ const resolvers = {
         user,
       };
     },
-    login: async (
-      parent: unknown,
-      args: { email: string; password: string },
-      context: GraphQLContext
-    ) => {
-      // 1
-      const user = await context.prisma.User.findUnique({
-        where: { email: args.email },
-      });
-      if (!user) {
-        throw new Error("No such user found");
-      }
+    // login: async (
+    //   parent: unknown,
+    //   args: { email: string; password: string }
+    // ) => {
+    //   // 1
+    //   const user = await prisma.User.findUnique({
+    //     where: { email: args.email },
+    //   });
+    //   if (!user) {
+    //     throw new Error("No such user found");
+    //   }
 
-      // 2
-      const valid = await compare(args.password, user.password);
-      if (!valid) {
-        throw new Error("Invalid password");
-      }
+    //   // 2
+    //   const valid = await compare(args.password, user.password);
+    //   if (!valid) {
+    //     throw new Error("Invalid password");
+    //   }
 
-      const token = sign({ userId: user.id }, APP_SECRET);
+    //   const token = sign({ userId: user.id }, APP_SECRET);
 
-      // 3
-      return {
-        token,
-        user,
-      };
-    },
-    deleteMovie: async (
-      parent: any,
-      args: { id: number },
-      context: GraphQLContext
-    ) => {
+    //   // 3
+    //   return {
+    //     token,
+    //     user,
+    //   };
+    // },
+    deleteMovie: async (parent: any, args: { id: number }) => {
       try {
-        const deletedMovie = await context.prisma.movie.delete({
+        const deletedMovie = await prisma.movie.delete({
           where: { id: args.id }, // Use args.id directly
         });
 
