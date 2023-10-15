@@ -55,7 +55,12 @@ const typeDefs = gql`
     login(email: String!, password: String!): AuthPayload
     createMovie(data: MovieInput!): Movie!
     updateMovie(id: Int!, data: MovieInput!): Movie!
-    deleteMovie(id: Int!): Movie!
+    deleteMovie(id: Int!): DeleteMovieResponse
+  }
+
+  type DeleteMovieResponse {
+    success: Boolean
+    message: String
   }
 
   type AuthPayload {
@@ -105,13 +110,13 @@ const resolvers = {
     },
   }),
   Query: {
-    // me: (parent: unknown, args: {}) => {
-    //   if (currentUser === null) {
-    //     throw new Error("Unauthenticated!");
-    //   }
+    me: (parent: unknown, args: {}, context: GraphQLContext) => {
+      if (context.currentUser === null) {
+        throw new Error("Unauthenticated!");
+      }
 
-    //   return context.currentUser;
-    // },
+      return context.currentUser;
+    },
     getUsers: async () => {
       return await prisma.user.findMany();
     },
@@ -125,18 +130,18 @@ const resolvers = {
     //     }
     //     return user;
     //   },
-    //   getMovies: async (context: GraphQLContext) => {
-    //     return await prisma.movie.findMany();
-    //   },
-    //   getMovie: (parent: any, args: { id: number }, context: GraphQLContext) => {
-    //     const movie = prisma.movie.findUnique({
-    //       where: { id: args.id },
-    //     });
-    //     if (!movie) {
-    //       return null;
-    //     }
-    //     return movie;
-    //   },
+    getMovies: async (context: GraphQLContext) => {
+      return await prisma.movie.findMany();
+    },
+    getMovie: (parent: any, args: { id: number }, context: GraphQLContext) => {
+      const movie = prisma.movie.findUnique({
+        where: { id: args.id },
+      });
+      if (!movie) {
+        return null;
+      }
+      return movie;
+    },
     //   searchMovies: async (parent: any, args: { searchTerm: string }, context: GraphQLContext) => {
     //     // If a search term is provided, filter the movies by name or description
     //     if (args.searchTerm) {
@@ -271,36 +276,41 @@ const resolvers = {
         user,
       };
     },
-    //   deleteMovie: async (parent: any, args: { id: number }, context: GraphQLContext) => {
-    //     try {
-    //       const deletedMovie = await prisma.movie.delete({
-    //         where: { id: args.id },
-    //       });
+    deleteMovie: async (
+      parent: any,
+      args: { id: number },
+      context: GraphQLContext
+    ) => {
+      if (context.currentUser === null) {
+        throw new Error("Unauthenticated!");
+      }
+      try {
+        const deletedMovie = await prisma.movie.delete({
+          where: { id: args.id },
+        });
 
-    //       // Check if the movie was successfully deleted
-    //       if (deletedMovie) {
-    //         return {
-    //           id: deletedMovie.id, // Return the ID of the deleted movie
-    //           success: true,
-    //           message: "Movie deleted successfully",
-    //         };
-    //       } else {
-    //         // Return a response indicating that the movie was not found
-    //         return {
-    //           id: null, // Return null for the ID in case of failure
-    //           success: false,
-    //           message: "Movie not found or failed to delete",
-    //         };
-    //       }
-    //     } catch (error: any) {
-    //       // Return an error response
-    //       return {
-    //         id: null, // Return null for the ID in case of an error
-    //         success: false,
-    //         message: "An error occurred while deleting the movie",
-    //       };
-    //     }
-    //   },
+        // Check if the movie was successfully deleted
+        if (deletedMovie) {
+          return {
+            success: true,
+            message: "Movie deleted successfully",
+          };
+        } else {
+          // Return a response indicating that the movie was not found
+          return {
+            success: false,
+            message: "Movie not found or failed to delete",
+          };
+        }
+      } catch (error: any) {
+        // Return an error response
+        return {
+          success: false,
+          message:
+            "An error occurred while deleting the movie: " + error.message,
+        };
+      }
+    },
   },
 };
 
