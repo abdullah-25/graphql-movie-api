@@ -98,6 +98,7 @@ const resolvers = {
       return await prisma.User.findMany();
     },
     getUser: (parent: any, args: { id: number }) => {
+      //find user
       const user = prisma.User.findUnique({
         where: { id: args.id },
       });
