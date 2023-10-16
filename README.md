@@ -19,6 +19,11 @@ A simple CRUD (Create, Read, Update, Delete) API project built with GraphQL and 
 
 This project is a simple GraphQL API that provides CRUD operations for managing data related to user profiles and movies. It uses GraphQL for querying and modifying the data and PostgreSQL with Prisma as the database. The project is organized to demonstrate how to create, retrieve, update, and delete movie and user records. JWT is implemented for user auth and only verified and authenticated users are granted access to CRUD operations.
 
+## Demo
+
+- part 1: https://www.loom.com/share/c5b85e09095e418ea55203e0a847e0eb?sid=e1dc49fa-db75-4493-aabc-7a98bfc48672
+- part 2: https://www.loom.com/share/5619b057aed34bcd9255eed2a1e7f4e3?sid=d1e58adf-b491-4cfb-8754-058bed17d70a
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
