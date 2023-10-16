@@ -63,7 +63,7 @@ npm start
 
 Your GraphQL CRUD API should now be up and running.
 
-##Project Structure
+## Project Structure
 
 The project structure is organized as follows:
 
