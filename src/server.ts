@@ -2,7 +2,8 @@ const { ApolloServer } = require("apollo-server");
 const { resolvers, typeDefs } = require("./schemas/schema");
 import { getUser } from "./authUtils";
 
-const server = new ApolloServer({
+//export server so it can be used under __test__ files
+export const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: async ({ req }: any) => {
