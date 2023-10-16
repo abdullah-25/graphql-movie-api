@@ -7,20 +7,27 @@ export const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: async ({ req }: any) => {
-    const token = req.headers.authorization || "";
+    // Check if there is an authorization header
+    const authorizationHeader = req.headers.authorization;
 
-    //when checking for queries that dont need auth such as query all movies..
-    //..we return empty so context can work even without token
-    if (token === "") return {};
+    if (authorizationHeader) {
+      // Extract the token from the header
+      const token = authorizationHeader.split(" ")[1] || "";
 
-    if (token) {
-      //invoke getUser method from wuthUtils to verify if user is authenticated
-      const user = await getUser(token);
+      // Check if the token is not empty
+      if (token) {
+        // Invoke the getUser method from authUtils to verify if the user is authenticated
+        const user = await getUser(token);
 
-      if (user) {
-        return { user };
+        // If the user is authenticated, include it in the context
+        if (user) {
+          return { user };
+        }
       }
     }
+
+    // Return an empty context if no valid authorization header is present
+    return {};
   },
 });
 
