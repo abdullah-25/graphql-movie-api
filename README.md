@@ -17,7 +17,7 @@ A simple CRUD (Create, Read, Update, Delete) API project built with GraphQL and 
 
 ## Overview
 
-This project is a simple GraphQL API that provides CRUD operations for managing data related to [your domain]. It uses GraphQL for querying and modifying the data and PostgreSQL with Prisma as the database. The project is organized to demonstrate how to create, retrieve, update, and delete [your data model] records.
+This project is a simple GraphQL API that provides CRUD operations for managing data related to user profiles and movies. It uses GraphQL for querying and modifying the data and PostgreSQL with Prisma as the database. The project is organized to demonstrate how to create, retrieve, update, and delete movie and user records. JWT is implemented for user auth and only verified and authenticated users are granted access to CRUD operations.
 
 ## Prerequisites
 
@@ -70,9 +70,9 @@ The project structure is organized as follows:
 - src/ - Contains the main source code of the GraphQL server.
 - prisma/ - Contains Prisma schema and database seeding scripts.
 - db.ts - The Prisma client configuration.
-- schema/ - Define your GraphQL schema.
-- resolvers/ - Implement the resolver functions for your schema.
-
+- schema/ - Contains GraphQL schema (typeDef and resolvers)
+- server/ -code to start and run server
+  
 ##GraphQL Schema
 The GraphQL schema for this project defines the data model, queries, mutations, and types. You can find the schema in the schema/ directory.
 
@@ -94,61 +94,77 @@ GET /graphql - The GraphQL endpoint for querying and manipulating data.
 ## Sample Queries and Mutations
 Here are some sample queries and mutations that you can use to interact with the API:
 
-1. Query all [your data model]:
+1. Query all movies:
 
 graphql
 
 ```shell
-query {
-  get[YourDataModels] {
-    id
-    name
-    # Add more fields here
-  }
+qquery GetMovies {
+    getMovies {
+        id
+        name
+        description
+        director
+        releaseDate
+    }
 }
 ```
 
-2. Create a new [your data model]:
+2. Create a new Movie:
    
 ```shell
-mutation {
-  create[YourDataModel](
-    data: {
-      name: "New Item"
-      # Add more fields here
+mutation CreateMovie {
+    createMovie(
+        data: {
+            name: "test"
+            description: "test"
+            director: "test"
+            releaseDate: "2022-02-02"
+        }
+    ) {
+        id
+        name
+        description
+        director
+        releaseDate
     }
-  ) {
-    id
-    name
-    # Add more fields here
-  }
 }
 ```
 
-3. Update an existing [your data model]:
+3. Update an existing Movie:
 
 ```shell
 
-mutation {
-  update[YourDataModel](
-    id: 1
-    data: {
-      name: "Updated Item"
-      # Add more fields here
+mutation UpdateMovie {
+    updateMovie(
+        id: 3
+        data: {
+            name: "test"
+            description: "test"
+            director: "test"
+            releaseDate: "2021-02-03"
+        }
+    ) {
+        id
+        name
+        description
+        director
+        releaseDate
     }
-  ) {
-    id
-    name
-    # Add more fields here
-  }
 }
 ```
 
-4. Delete a [your data model] by ID:
+4. Delete a movie by ID:
 
 ```shell
-mutation {
-  delete[YourDataModel](id: 1)
+mutation DeleteMovie {
+    deleteMovie(id: 2) {
+        id
+        name
+        description
+        director
+        releaseDate
+    }
 }
 ```
 
