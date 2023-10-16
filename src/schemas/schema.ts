@@ -2,7 +2,7 @@ import { gql } from "apollo-server";
 import { GraphQLScalarType, Kind } from "graphql";
 import { hash, compare } from "bcryptjs";
 import { sign } from "jsonwebtoken";
-import { secret } from "../server";
+import { secret } from "../authUtils";
 import { requireAuthentication } from "../authUtils";
 const { prisma } = require("../db");
 

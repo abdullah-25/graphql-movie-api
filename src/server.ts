@@ -1,18 +1,6 @@
 const { ApolloServer, gql, GraphQLError } = require("apollo-server");
 const { resolvers, typeDefs } = require("./schemas/schema");
-import jwt from "jsonwebtoken";
-require("dotenv").config();
-
-export const secret: string = process.env.SECRET as string;
-
-const getUser = (token: string) => {
-  try {
-    const payload = jwt.verify(token, secret);
-    return payload;
-  } catch (error) {
-    throw new Error("Token verification failed");
-  }
-};
+import { getUser } from "./authUtils";
 
 const server = new ApolloServer({
   typeDefs,
@@ -26,6 +14,7 @@ const server = new ApolloServer({
     if (token === "" || token === undefined || token === null) return {};
 
     if (token) {
+      //invoke getUser method from wuthUtils to verify if user is authenticated
       const user = await getUser(token);
 
       if (user) {

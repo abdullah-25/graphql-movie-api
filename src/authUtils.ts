@@ -1,3 +1,8 @@
+import jwt from "jsonwebtoken";
+require("dotenv").config();
+
+export const secret: string = process.env.SECRET as string;
+
 export function requireAuthentication(context: { user: any }) {
   if (!context.user) {
     throw new Error(
@@ -5,3 +10,12 @@ export function requireAuthentication(context: { user: any }) {
     );
   }
 }
+
+export const getUser = (token: string) => {
+  try {
+    const payload = jwt.verify(token, secret);
+    return payload;
+  } catch (error) {
+    throw new Error("Token verification failed");
+  }
+};
