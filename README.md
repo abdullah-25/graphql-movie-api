@@ -72,6 +72,7 @@ The project structure is organized as follows:
 - db.ts - The Prisma client configuration.
 - schema/ - Contains GraphQL schema (typeDef and resolvers)
 - server/ -code to start and run server
+- __tests__/ -contains code for unit testing
   
 ##GraphQL Schema
 The GraphQL schema for this project defines the data model, queries, mutations, and types. You can find the schema in the schema/ directory.
