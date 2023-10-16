@@ -1,9 +1,10 @@
 import { gql } from "apollo-server";
-const { prisma } = require("../db");
 import { GraphQLScalarType, Kind } from "graphql";
 import { hash, compare } from "bcryptjs";
 import { sign } from "jsonwebtoken";
-import { SECRET } from "../server";
+import { secret } from "../server";
+import { requireAuthentication } from "../authUtils";
+const { prisma } = require("../db");
 
 const typeDefs = gql`
   type User {
@@ -77,18 +78,19 @@ const typeDefs = gql`
 `;
 
 const resolvers = {
+  //Date is defined as scaler type here
   Date: new GraphQLScalarType({
     name: "Date",
     description: "Date custom scalar type",
     parseValue(value: any) {
-      return new Date(value); // value from the client
+      return new Date(value);
     },
     serialize(value: any) {
-      return value.getTime(); // value sent to the client
+      return value.getTime();
     },
     parseLiteral(ast) {
       if (ast.kind === Kind.INT) {
-        return new Date(+ast.value); // ast value is always in string format
+        return new Date(+ast.value);
       }
       return null;
     },
@@ -98,7 +100,6 @@ const resolvers = {
       return await prisma.User.findMany();
     },
     getUser: (parent: any, args: { id: number }) => {
-      //find user
       const user = prisma.User.findUnique({
         where: { id: args.id },
       });
@@ -116,7 +117,7 @@ const resolvers = {
         where: { id: args.id },
       });
       if (!movie) {
-        return null;
+        return "Movie with id " + args.id + " does not exist";
       }
       return movie;
     },
@@ -145,8 +146,7 @@ const resolvers = {
         return movies;
       }
 
-      // If no search term is provided, return an empty array or handle it as needed
-      return [];
+      return "Please provide search term ";
     },
     sortMovies: async (parent: any, args: { sort: string }) => {
       if (args.sort !== "name_ASC" && args.sort !== "name_DESC") {
@@ -165,7 +165,6 @@ const resolvers = {
         } else if (sortBy === "name_DESC") {
           orderBy = { name: "desc" };
         }
-        // Add more sorting options as needed.
       }
 
       const movies = await prisma.movie.findMany({
@@ -174,7 +173,8 @@ const resolvers = {
 
       return movies;
     },
-    //for small db this would work well but if we have millions of movies then skipping thousands would slow down this query
+    //for small db this would work well but if we have millions of movies then skipping thousands would slow down this query..
+    //..as offset would still iterate over given rows
     //so offset pagination might not be ideal in that case
     moviePagination: async (parent: any, args: any) => {
       try {
@@ -183,7 +183,7 @@ const resolvers = {
           take: args.take,
         });
 
-        return results; // Ensure you return an array of movie objects
+        return results;
       } catch (error) {
         console.error("Error in moviePagination resolver:", error);
         throw new Error(
@@ -230,7 +230,6 @@ const resolvers = {
       args: { email: string; password: string },
       contextValue: any
     ) => {
-      // 1
       const user = await prisma.user.findUnique({
         where: { email: args.email },
       });
@@ -238,15 +237,13 @@ const resolvers = {
         throw new Error("No such user found");
       }
 
-      // 2
       const valid = await compare(args.password, user.password);
       if (!valid) {
         throw new Error("Invalid password");
       }
 
-      const token = sign({ userId: user.id }, SECRET);
+      const token = sign({ userId: user.id }, secret);
 
-      // 3
       return {
         token,
         user,
@@ -258,11 +255,8 @@ const resolvers = {
       context: any
     ) => {
       // check to see if user is unauthorised
-      if (!context.user) {
-        throw new Error(
-          "Unauthorized. You must be logged in to change your password."
-        );
-      }
+      requireAuthentication(context);
+
       try {
         const hashedPassword = await hash(args.password, 12);
         const updatePassword = await prisma.user.update({
@@ -286,11 +280,8 @@ const resolvers = {
     },
     createMovie: async (parent: any, args: any, context: any) => {
       // check to see if user is unauthorised
-      if (!context.user) {
-        throw new Error(
-          "Unauthorized. You must be logged in to create a movie."
-        );
-      }
+      requireAuthentication(context);
+
       try {
         const releaseDate = new Date(args.data.releaseDate);
 
@@ -310,11 +301,8 @@ const resolvers = {
     },
     updateMovie: async (parent: any, args: any, context: any) => {
       // check to see if user is unauthorised
-      if (!context.user) {
-        throw new Error(
-          "Unauthorized. You must be logged in to update this movie."
-        );
-      }
+      requireAuthentication(context);
+
       try {
         const releaseDate = new Date(args.data.releaseDate);
 
@@ -336,14 +324,11 @@ const resolvers = {
 
     deleteMovie: async (parent: any, args: { id: number }, context: any) => {
       // check to see if user is unauthorised
-      if (!context.user) {
-        throw new Error(
-          "Unauthorized. You must be logged in to delete this movie."
-        );
-      }
+      requireAuthentication(context);
+
       try {
         const deletedMovie = await prisma.movie.delete({
-          where: { id: args.id }, // Use args.id directly
+          where: { id: args.id },
         });
 
         return deletedMovie;
